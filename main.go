@@ -174,7 +174,7 @@ func (r *ray) refract(l *line, n float64) (ok bool, cropped *raySegment, continu
 	)
 
 	if err := inverse.Inverse(matrix); err != nil {
-		panic(err)
+		fmt.Println(err)
 	}
 
 	(*mat.Dense)(iM).Mul(inverse, (*mat.Dense)(r.direction))
