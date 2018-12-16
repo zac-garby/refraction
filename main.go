@@ -258,6 +258,55 @@ func newLine(start, end *vector, o int, n float64) *line {
 	}
 }
 
+func lensWidthAt(r, c, k, K float64) float64 {
+	if 1-(K+1)*c*c*r*r < 0 {
+		return -1
+	}
+
+	return k + (c*r*r)/(1+math.Sqrt(1-(K+1)*c*c*r*r))
+}
+
+func makeLens(resolution, sx, sy, tx, ty, index, c, k, K float64) []*line {
+	var (
+		lines = make([]*line, 0)
+		prev  = -1.0
+	)
+
+	for x := 0.0; lensWidthAt(x, c, k, K) > 0; x += resolution {
+		width := lensWidthAt(x, c, k, K)
+
+		if prev >= 0 {
+			lines = append(lines, newLine(
+				vec((x-resolution)*sx+tx, prev*sy+ty),
+				vec(x*sx+tx, width*sy+ty),
+				-1, index,
+			))
+
+			lines = append(lines, newLine(
+				vec(-((x-resolution)*sx+tx), prev*sy+ty),
+				vec(-(x*sx+tx), width*sy+ty),
+				1, index,
+			))
+
+			lines = append(lines, newLine(
+				vec((x-resolution)*sx+tx, -prev*sy+ty),
+				vec(x*sx+tx, -width*sy+ty),
+				1, index,
+			))
+
+			lines = append(lines, newLine(
+				vec(-((x-resolution)*sx+tx), -prev*sy+ty),
+				vec(-(x*sx+tx), -width*sy+ty),
+				-1, index,
+			))
+		}
+
+		prev = width
+	}
+
+	return lines
+}
+
 func pt(x, y float64) (float64, float64) {
 	return (x*scale + width/2), height - (y*scale + height/2)
 }
@@ -283,9 +332,9 @@ func main() {
 		}
 	}
 
-	n := 1.4
+	n := 4.4
 
-	lines := []*line{
+	/* lines := []*line{
 		// Bottom and top
 		newLine(vec(-40, 16), vec(40, 24), 1, n),
 		newLine(vec(-40, 32), vec(40, 40), -1, n),
@@ -293,12 +342,14 @@ func main() {
 		// Left and right
 		newLine(vec(-40, 16), vec(-40, 32), -1, n),
 		newLine(vec(40, 24), vec(40, 40), 1, n),
-	}
+	} */
 
-	for x := -100.0; x <= 100; x += 5 {
+	lines := makeLens(0.05, 4, 1, 0, -40, n, -0.04, 8.2, 1.9)
+
+	for x := -30.0; x <= 30.0; x += 5 {
 		ray := &ray{
-			start:     vec(-30+x, -100),
-			direction: vec(0.4, 1),
+			start:     vec(x, -100),
+			direction: vec(0, 1),
 		}
 
 		segments, final := ray.project(lines, 32)
